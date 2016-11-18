@@ -1,0 +1,207 @@
+    
+Random Pair Generator
+=====================
+Usage: Random_Pairs <Required Parameters>
+
+Parameters:
+    -x,    --challenges  <integer>    Number of random challenge pairs to generate
+    -y,    --primes      <integer>    Likelihood of prime numbers
+    -z,    --vowels      <integer>    Likelihood of vowels
+    -h|-?, --help                     This usage help
+
+----
+x = 1000, y = 1, z = 1
+{
+    "letters": {"wins": 800, "streak": 30},
+    "numbers": {"wins": 200, "streak": 4}
+}
+
+----
+x = 1000, y = 1, z = 1
+{
+    "letters": {"wins": 811, "streak": 43},
+    "numbers": {"wins": 189, "streak": 4}
+}
+
+----
+x = 1000, y = 1, z = 1
+{
+    "letters": {"wins": 817, "streak": 43},
+    "numbers": {"wins": 183, "streak": 4}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 804, "streak": 40},
+    "numbers": {"wins": 196, "streak": 3}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 800, "streak": 28},
+    "numbers": {"wins": 200, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 781, "streak": 19},
+    "numbers": {"wins": 219, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 765, "streak": 40},
+    "numbers": {"wins": 235, "streak": 6}
+}
+
+----
+x = 1000, y = 1, z = 10
+{
+    "letters": {"wins": 783, "streak": 27},
+    "numbers": {"wins": 217, "streak": 4}
+}
+
+----
+x = 1000, y = 1, z = 10
+{
+    "letters": {"wins": 810, "streak": 40},
+    "numbers": {"wins": 190, "streak": 3}
+}
+
+----
+x = 1000, y = 1, z = 10
+{
+    "letters": {"wins": 803, "streak": 42},
+    "numbers": {"wins": 197, "streak": 4}
+}
+
+----
+x = 1000, y = 1, z = 10
+{
+    "letters": {"wins": 809, "streak": 52},
+    "numbers": {"wins": 191, "streak": 4}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 775, "streak": 20},
+    "numbers": {"wins": 225, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 798, "streak": 31},
+    "numbers": {"wins": 202, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 785, "streak": 24},
+    "numbers": {"wins": 215, "streak": 4}
+}
+
+----
+x = 1000, y = 100, z = 1
+{
+    "letters": {"wins": 785, "streak": 27},
+    "numbers": {"wins": 215, "streak": 4}
+}
+
+----
+x = 1000, y = 100, z = 10
+{
+    "letters": {"wins": 761, "streak": 26},
+    "numbers": {"wins": 239, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 10
+{
+    "letters": {"wins": 745, "streak": 19},
+    "numbers": {"wins": 255, "streak": 7}
+}
+
+----
+x = 1000, y = 100, z = 100
+{
+    "letters": {"wins": 769, "streak": 21},
+    "numbers": {"wins": 231, "streak": 4}
+}
+
+----
+x = 1000, y = 100, z = 100
+{
+    "letters": {"wins": 795, "streak": 24},
+    "numbers": {"wins": 205, "streak": 5}
+}
+
+----
+x = 1000, y = 100, z = 100
+{
+    "letters": {"wins": 790, "streak": 46},
+    "numbers": {"wins": 210, "streak": 4}
+}
+
+----
+x = 10000, y = 100, z = 1
+{
+    "letters": {"wins": 7770, "streak": 48},
+    "numbers": {"wins": 2230, "streak": 8}
+}
+
+----
+x = 10000, y = 100, z = 1
+{
+    "letters": {"wins": 7857, "streak": 46},
+    "numbers": {"wins": 2143, "streak": 9}
+}
+
+----
+x = 10000, y = 100, z = 1
+{
+    "letters": {"wins": 7786, "streak": 53},
+    "numbers": {"wins": 2214, "streak": 8}
+}
+
+----
+x = 100000, y = 100, z = 1
+{
+    "letters": {"wins": 78119, "streak": 73},
+    "numbers": {"wins": 21881, "streak": 12}
+}
+
+----
+x = 100000, y = 100, z = 1
+{
+    "letters": {"wins": 78096, "streak": 82},
+    "numbers": {"wins": 21904, "streak": 10}
+}
+
+----
+x = 100000, y = 100, z = 1
+{
+    "letters": {"wins": 78060, "streak": 59},
+    "numbers": {"wins": 21940, "streak": 10}
+}
+
+----
+x = 1000000, y = 100, z = 1
+{
+    "letters": {"wins": 780270, "streak": 91},
+    "numbers": {"wins": 219730, "streak": 15}
+}
+
+----
+x = 1000000, y = 100, z = 1
+{
+    "letters": {"wins": 781656, "streak": 94},
+    "numbers": {"wins": 218344, "streak": 12}
+}
+

@@ -1,0 +1,33 @@
+Notes and zssumptions(for right or wrong) I made in the programming of Random_Pairs
+===================================================================================
+1.	I interpreted 'likely' to mean occurrences and rather than programming any likelihood
+	or probability, I forced the occurrences mathematically.
+2.  I did not use any OOP.  I could see its use, but not necessity in the "wins" and
+	"streaks".
+3.	I avoided any additional perl modules needed, other than those provided with the
+	standard install of perl.
+4.	I used Getopt::Long for the options to be provided and values required.  One advantage
+	to this overkill is allowing -d option for my debugging.
+5.  I adjusted "wins" to occur for "<=" rather than "<" to have "wins" total up to the
+	number of challenges for letters and numbers.
+6.  Small and infrequent increments were forced on occurrences/likelihoods to adjust 
+	sums to x, the number of challenges.
+7.  Some limited algebra was used for determination of vowel, y and consonant proportions.
+	I noticed this approach did not prove correct with small X values (<=10), but otherwise
+	successful.
+
+Analysis
+========
+I provided some sample output in the Random_Pairs.out file.
+
+The letters always won with me.  I was not able to get numbers to ever win.  However, I
+seemed to notice the numbers value increase in proportion to letters with the reduction of
+vowel likelihood (which would double 'y' likelihood) and reduce the positional values of
+letters.  
+In general, the ratio of wins between letters and numbers reduced with the reduction of
+likelihood of vowels.
+In general, the ratio of streaks between letters and numbers did not seem to alter in
+changing the likelihoods of primes or vowels.
+
+For the sake of time, I did not graph out sample outputs which I would prefer to do to get
+better analysis of trends with varied outputs.

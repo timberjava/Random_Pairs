@@ -1,0 +1,512 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use v5.10;
+
+use Getopt::Long;
+use Scalar::Util qw(looks_like_number); # Used in determining perfect squares
+use Math::Round;                        # Used for proportions/likelihoods
+use List::MoreUtils qw(first_index);    # Determining position of character in list 
+
+##########################################################################################
+#  Program:
+#  --------
+#  Random_Pairs
+#
+#  Purpose:
+#  --------
+#  This program generates X random character pairs and analyzes them using 
+#  the following rules:
+#
+#  1. Each pair should be one number (1-99) and one letter (a-z)
+#
+#  2. Prime numbers should be Y times more likely than other numbers
+#
+#  3. Perfects squares should be one third (1/3)x as likely as prime numbers 
+#
+#  4. Vowels (a, e, i, o, u) should be Z times more likely than consonants
+#
+#  5. The letter "y" should be twice (2x) as likely as vowels
+#
+#  6. Each letter must be translated to a number based on the its numerical 
+#     position in the alphabet.
+#     ex: 'f' is the 6th letter of the alphabet, so it would be evaluated as 6. 
+#
+#  7. This program should return valid JSON that has the following structure:
+#
+#     {
+#        "letters": {"wins": 4000, "streak": 17},
+#        "numbers": {"wins": 6000, "streak": 6}
+#     }
+#
+#  8. Each number/letter value pair should be evaluated. If the letter value is lower,
+#     incrememnt the "wins" field on the "letters" object. If the number value is lower, 
+#     increment the "wins" field on the "numbers" object.
+#
+#  9. Keep track of the longest running "streak" for letters and numbers
+#    
+#     ex: if "letters" is lower 5 times in a row, the letters streak would be 5
+#
+#  10. This program should be able to take 3 inputs:
+#   a. the number of "challenges" (X)
+#   b. the likelihood of prime numbers (Y)
+#   c. the likelihood of vowels (Z)
+#
+##########################################################################################
+
+my ($num_challenges, $prime_likelihood, $vowel_likelihood, $help_me, $debug); # Options
+my @challenge_num_array;
+my @challenge_char_array;
+
+my (@letters_wins_list, @numbers_wins_list, $letters_wins, $numbers_wins,
+    $longest_letters_streak, $longest_numbers_streak); # Wins/Streaks variables
+
+my @char_list = ('a'..'z');
+my @vowel_list = ('a', 'e', 'i', 'o', 'u');
+my $vowel_list_length;
+my $char_list_length;
+
+my $number_of_primes;
+my $primes_to_push;
+
+my $number_of_non_primes;
+my $non_primes_to_push;
+
+my $number_of_perfect_squares;
+my $perfect_squares_to_push;
+
+my $number_of_vowels;
+my $vowels_to_push;
+
+my $number_of_consonants;
+my $consonants_to_push;
+
+my $number_of_letter_y;
+my $letter_y_to_push;
+
+my ($good_to_go, $num_to_push, $char_to_push, $end_session, $any_difference); # Misc
+
+open LOG, '>>', "Random_Pairs.out" || die "Unable to open  log file for writing\n";
+
+###################################
+####  Start of Main Execution  ####
+
+### Required parameters from command line.
+GetOptions(
+    'challenges|x=i'    => \$num_challenges,
+    'primes|y=i'        => \$prime_likelihood,
+    'vowels|z=i'        => \$vowel_likelihood,
+    'help|?'            => \$help_me,
+    'debug'             => \$debug,
+) || usage();
+if ($end_session) {     # If incorrect parameter provided, display help and bail
+    goto SESSION_OVER;
+}
+
+$good_to_go = digest_options(); # Verify all three parameters with values given
+
+if ($good_to_go) {    
+    ######################
+    ##  Do the numbers
+    ######################
+    
+    # Calculate the number of primes to load up
+    $number_of_non_primes = int ($num_challenges / $prime_likelihood);
+    $number_of_primes = $num_challenges - $number_of_non_primes;
+    # ugly hack to get AT LEAST the likelihood of primes greater than other numbers
+    while (($number_of_non_primes * $prime_likelihood) >= $number_of_primes) {
+        $number_of_non_primes--;
+        $number_of_primes++;
+    }
+    
+    # Calculate the number of perfect squares needed
+    $number_of_perfect_squares = int ($number_of_primes / 3); # Squares 1/3 x likely as primes
+    
+    # Set decrementing counters
+    $perfect_squares_to_push = $number_of_perfect_squares;
+    $primes_to_push = $number_of_primes;
+    $non_primes_to_push = $number_of_non_primes;
+    
+    print  "Total non-primes to push: $number_of_non_primes\n" if $debug;
+    print  "Total primes to push: $number_of_primes\n" if $debug;
+    print  "Total perfect squares to push: $number_of_perfect_squares\n" if $debug;
+    
+    # First, push perfect squares which may also be prime
+    do {
+        $num_to_push = get_me_a_perfect_square();
+        if (this_is_a_prime($num_to_push)) {
+            $primes_to_push--;
+        } else {
+            $non_primes_to_push--;
+        }
+        $perfect_squares_to_push--;
+        push (@challenge_num_array, $num_to_push);
+    } while ($perfect_squares_to_push > 0);
+    
+    # Next, push remaining number of primes that are NOT perfect squares
+    do {
+        $num_to_push = get_me_a_prime();
+        if (!this_is_a_perfect_square($num_to_push)) {
+            $primes_to_push--;
+            push(@challenge_num_array, $num_to_push);
+        }
+    } while ($primes_to_push > 0);
+    
+    # Finally, push remaining numbers that are neither prime, nor perfect squares
+    do {
+        $num_to_push = get_random_number();
+        if (!this_is_a_prime($num_to_push) && !this_is_a_perfect_square($num_to_push)) {
+            $non_primes_to_push--;
+            push(@challenge_num_array, $num_to_push);
+        }
+    } while ($non_primes_to_push > 0);
+
+    ######################
+    ##  Do the characters 
+    ######################
+    
+    # Calculate the number of vowels needed
+    $vowel_list_length = scalar @vowel_list; # Get length of vowel list (avoiding hardcode)
+    $char_list_length = scalar @char_list;   # Get length of char list  (avoiding hardcode)
+    
+    # The following determination for Vowels, 'y' and Consonants are from the premise:
+    # e.g., z = 8, Ttl Chars = 100
+    # V + y + C = 100
+    # 8C + 2(8C) + C = 100, or 25C = 100, or C = 4
+    # So, Vowels = 32, 'y' = 64, Consonants = 4
+    my $factor = round($num_challenges/($vowel_likelihood + ($vowel_likelihood * 2) + 1));
+    $number_of_consonants = $factor;
+    $number_of_vowels = round($vowel_likelihood * $factor);
+    $number_of_letter_y = $number_of_vowels * 2;
+    $any_difference = $num_challenges - ($number_of_consonants + $number_of_vowels + $number_of_letter_y);
+    while ($any_difference > 0) {
+        $number_of_vowels += round($any_difference / 2);
+        $any_difference = $num_challenges - ($number_of_consonants + $number_of_vowels + $number_of_letter_y);
+        if ($any_difference > 0) {
+            next;
+        }
+        $number_of_letter_y += round($any_difference / 2);
+    }
+    
+    $consonants_to_push = $number_of_consonants;
+    $vowels_to_push = $number_of_vowels;
+    $letter_y_to_push = $number_of_letter_y;
+
+    print "Factor is: $factor\n" if $debug;
+    print "Total consonants to push: $consonants_to_push\n" if $debug;
+    print "Total vowels to push: $vowels_to_push\n" if $debug;
+    print "Total letter y\'s to push: $letter_y_to_push\n" if $debug;
+    
+    # Push the vowels
+    do {
+        $char_to_push = like_to_buy_a_vowel_pat();
+        $vowels_to_push--;
+        push(@challenge_char_array, $char_to_push);
+    } while ($vowels_to_push > 0);
+    
+    # Push the y's
+    do {
+        $letter_y_to_push--;
+        push(@challenge_char_array, 'y');
+    } while ($letter_y_to_push > 0);
+
+    # Push the consonants
+    do {
+        $char_to_push = get_me_a_consonant();
+        $consonants_to_push--;
+        push(@challenge_char_array, $char_to_push);
+    } while ($consonants_to_push > 0);
+    print_out_lists() if $debug;
+    
+    evaluate_wins();
+    print_out_wins_lists() if $debug;
+    evaluate_streaks();
+    print LOG << "EOT";  # Print to output file also
+----
+x = $num_challenges, y = $prime_likelihood, z = $vowel_likelihood
+{
+    "letters": {"wins": $letters_wins, "streak": $longest_letters_streak},
+    "numbers": {"wins": $numbers_wins, "streak": $longest_numbers_streak}
+}
+
+EOT
+
+    print STDERR << "EOT";
+----
+x = $num_challenges, y = $prime_likelihood, z = $vowel_likelihood
+{
+    "letters": {"wins": $letters_wins, "streak": $longest_letters_streak},
+    "numbers": {"wins": $numbers_wins, "streak": $longest_numbers_streak}
+}
+
+EOT
+
+    
+} else { # Not good to go
+    print "\n*** All three parameters with values > 0 must be supplied!\n";
+    usage();
+}
+
+SESSION_OVER:
+if ($good_to_go) {
+    1; # Return 1 as successful to any calling program
+} else {
+    0; # Return 0 as failure to any calling program
+}
+####  End of Main Execution  ####
+#################################
+
+
+##########################################################################################
+#
+#        Subroutines              |                Brief Summary
+#  -------------------------------+-------------------------------------------------------
+#  get_random_number              |  Returns random number from 1 - 99
+#  get_random_character           |  Returns random character from @char_list (0 - 25)
+#  digest_options                 |  Validates required options, displays usage and exits
+#  this_is_a_perfect_square       |  Returns 1 if value passed is a perfect square
+#  get_me_a_perfect_square        |  Loops until a random perfect square found
+#  this_is_a_prime                |  Returns 1 if a value passed is a prime
+#  get_me_a_prime                 |  Loops until a prime number found
+#  print_out_wins_list            |  Prints letters and numbers wins lists side by side
+#  print_out_lists                |  Prints out letters and numbers lists side by side
+#  this_is_a_vowel                |  Returns 1 if a random character passed is a vowel
+#  like_to_buy_a_vowel_pat        |  Loops until a vowel is found 
+#  get_me_a_consonant             |  Loops until a non-vowel is found 
+#  get_character_position         |  Returns alphabetic position of character (a - z)
+#  evaluate_streaks               |  Returns "streak" value for letters and numbers
+#  evaluate_wins                  |  Totals "wins" for letters and numbers
+##########################################################################################
+
+sub evaluate_wins {
+    my $list_index;
+    my $char_value;
+    my $num_value;
+
+    
+    for ($list_index = 0; $list_index < $num_challenges; $list_index++) {
+        $num_value = $challenge_num_array[$list_index];
+        $char_value = get_character_position($challenge_char_array[$list_index]);
+        if ($char_value <= $num_value) {
+            $letters_wins_list[$list_index] = 1;
+            $numbers_wins_list[$list_index] = 0;
+            $letters_wins++;
+        } else {
+            $letters_wins_list[$list_index] = 0;
+            $numbers_wins_list[$list_index] = 1;
+            $numbers_wins++;
+        }
+    }
+}
+
+sub evaluate_streaks {
+    my $list_index = 0;
+    my $numbers_streak = 0;
+    my $letters_streak = 0;
+
+    $longest_letters_streak = 0;
+    $longest_numbers_streak = 0;
+    
+    do {
+        if ($letters_wins_list[$list_index] == 1) {
+            $letters_streak++;
+        } else {
+            if ($letters_streak > $longest_letters_streak) {
+                $longest_letters_streak = $letters_streak;
+            }
+            $letters_streak = 0;
+        }
+        if ($numbers_wins_list[$list_index] == 1) {
+            $numbers_streak++;
+        } else {
+            if ($numbers_streak > $longest_numbers_streak) {
+                $longest_numbers_streak = $numbers_streak;
+            }
+            $numbers_streak = 0;
+        }
+        $list_index++;
+    } while ($list_index < $num_challenges);
+}
+
+sub get_character_position {
+    my $char_to_seek;
+    my $char_position;
+    
+    $char_to_seek = shift;
+    $char_position = first_index { $_ eq $char_to_seek } @char_list;
+    $char_position++;
+    return $char_position;
+}
+    
+sub get_me_a_consonant {
+    my $char_to_test;
+    my $char_is_a_consonant;
+    
+    do {
+        $char_to_test = get_random_character();
+        if (!this_is_a_vowel($char_to_test)) {
+            $char_is_a_consonant = 1;
+        }
+    } while (!$char_is_a_consonant);
+    return $char_to_test;
+}
+
+sub like_to_buy_a_vowel_pat {
+    my $char_to_test;
+    my $char_is_a_vowel;
+    
+    do {
+        $char_to_test = get_random_character();
+        if (this_is_a_vowel($char_to_test)) {
+            $char_is_a_vowel = 1;
+        }
+    } while (!$char_is_a_vowel);
+    return $char_to_test;
+}
+
+sub this_is_a_vowel {
+    my $char_to_test;
+    my $vowel_this_is;
+    
+    $char_to_test = shift;
+    if (grep( /^$char_to_test$/, @vowel_list)) {
+        $vowel_this_is = 1;
+    }
+    return $vowel_this_is;
+}
+
+sub print_out_lists {
+    for (my $index = 0; $index < $num_challenges; $index++) {
+        print "$index)  ";
+        print $challenge_num_array[$index] ? $challenge_num_array[$index] : '  ';
+        print ", ";
+        print $challenge_char_array[$index] ? $challenge_char_array[$index] : '-';
+        print "\n";
+    }
+}
+
+sub print_out_wins_lists {
+    for (my $index = 0; $index < $num_challenges; $index++) {
+        print "$index)  ";
+        print $letters_wins_list[$index] ? $letters_wins_list[$index] : '  ';
+        print ", ";
+        print $numbers_wins_list[$index] ? $numbers_wins_list[$index] : '-';
+        print "\n";
+    }
+}
+
+sub get_me_a_prime {
+    my $number_to_test;
+    my $number_is_prime;
+    
+    do {
+        $number_to_test = get_random_number();
+        if (this_is_a_prime($number_to_test)) {
+            $number_is_prime = 1;
+        }
+    } while (!$number_is_prime);
+    return $number_to_test;
+}
+
+sub this_is_a_prime {
+    my $number_to_test;
+    my $this_is_a_prime;
+    
+    $number_to_test = shift;
+    if ($number_to_test % 2 !=0) {
+        $this_is_a_prime = 1;
+    }
+    return $this_is_a_prime;
+}
+    
+sub get_me_a_perfect_square {
+    my $number_to_test;
+    my $number_is_square;
+    
+    do {
+        $number_to_test = get_random_number();
+        if (this_is_a_perfect_square($number_to_test)) {
+            $number_is_square = 1;
+        }
+    } while (!$number_is_square);
+    return $number_to_test;
+}
+
+sub this_is_a_perfect_square {
+    my $perfect_square;
+    my $num_to_test;
+    my $perfect_square_to_test;
+    
+    $num_to_test = shift; # Use passed in value
+    
+    $perfect_square_to_test = sqrt($num_to_test);
+    
+    # You MUST first revert the sqrt result to a string in order to retrieve correct eval
+    # of 1 from looks_like_number
+    my $perfect = "$perfect_square_to_test";
+    
+    $perfect_square = (looks_like_number($perfect));
+    if ($perfect_square == 1) {
+        $perfect_square = 1;
+    } else {
+        $perfect_square = undef;
+    }
+    return $perfect_square;
+}
+
+sub digest_options {
+    my $all_options;
+    if (($num_challenges && $prime_likelihood && $vowel_likelihood) || $help_me) {
+        $all_options = 1;
+        if ($help_me) {
+            usage();
+            exit;
+        }
+    } elsif (!($num_challenges || $prime_likelihood || $vowel_likelihood)) {
+        $all_options = undef;
+    }
+    return $all_options;
+}
+
+sub usage {
+    print LOG << "EOT";
+    
+Random Pair Generator
+=====================
+Usage: Random_Pairs <Required Parameters>
+
+Parameters:
+    -x,    --challenges  <integer>    Number of random challenge pairs to generate
+    -y,    --primes      <integer>    Likelihood of prime numbers
+    -z,    --vowels      <integer>    Likelihood of vowels
+    -h|-?, --help                     This usage help
+
+EOT
+
+    print STDERR << "EOT";
+    
+Random Pair Generator
+=====================
+Usage: Random_Pairs <Required Parameters>
+
+Parameters:
+    -x,    --challenges  <integer>    Number of random challenge pairs to generate
+    -y,    --primes      <integer>    Likelihood of prime numbers
+    -z,    --vowels      <integer>    Likelihood of vowels
+    -h|-?, --help                     This usage help
+
+EOT
+
+    $end_session = 1;
+}
+
+sub get_random_number {
+    my $random_num = int(rand(99)) + 1; # getting random number from 1 - 99
+    return $random_num;
+}
+sub get_random_character {
+    my $random_char = int(rand(26)); # getting random character from 0 - 25
+    return $char_list[$random_char];
+}
+
