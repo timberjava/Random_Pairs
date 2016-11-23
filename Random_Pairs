@@ -135,6 +135,7 @@ if ($good_to_go) {
     # First, push perfect squares which may also be prime
     do {
         $num_to_push = get_me_a_perfect_square();
+		print "I got a perfect square of: $num_to_push\n" if $debug;
         if (this_is_a_prime($num_to_push)) {
             $primes_to_push--;
         } else {
@@ -425,6 +426,7 @@ sub get_me_a_perfect_square {
     my $number_is_square;
     
     do {
+	    print "In \'get_me_a_perfect_square\'\n" if $debug;
         $number_to_test = get_random_number();
         if (this_is_a_perfect_square($number_to_test)) {
             $number_is_square = 1;
@@ -435,23 +437,32 @@ sub get_me_a_perfect_square {
 
 sub this_is_a_perfect_square {
     my $perfect_square;
+	my $int_perfect_square;
     my $num_to_test;
     my $perfect_square_to_test;
     
     $num_to_test = shift; # Use passed in value
     
     $perfect_square_to_test = sqrt($num_to_test);
+	$int_perfect_square = int($perfect_square_to_test);
+	if ($int_perfect_square == $perfect_square_to_test) {
+		$perfect_square = 1;
+	} else {
+	    print "Perfect Square: $perfect_square_to_test, Int Perfect Square: $int_perfect_square\n" if $debug;
+	    print "$perfect_square_to_test is not a perfect square\n" if $debug;
+	}
+	
     
     # You MUST first revert the sqrt result to a string in order to retrieve correct eval
     # of 1 from looks_like_number
-    my $perfect = "$perfect_square_to_test";
+    #my $perfect = "$perfect_square_to_test";
     
-    $perfect_square = (looks_like_number($perfect));
-    if ($perfect_square == 1) {
-        $perfect_square = 1;
-    } else {
-        $perfect_square = undef;
-    }
+    #$perfect_square = (looks_like_number($perfect));
+    #if ($perfect_square == 1) {
+    #    $perfect_square = 1;
+    #} else {
+    #    $perfect_square = undef;
+    #}
     return $perfect_square;
 }
 
